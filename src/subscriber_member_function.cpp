@@ -34,16 +34,17 @@ public:
     
     publisher_ = this->create_publisher<visualization_msgs::msg::Marker>("visualization_marker", 10);
     
-  
+    x = 0;
     }
 
 private:
+  int x;
   void topic_callback(const geometry_msgs::msg::PointStamped::SharedPtr msg)
   {
     RCLCPP_INFO(this->get_logger(), "I heard: '%f'", msg->point.x);
     RCLCPP_INFO(this->get_logger(), "I heard: '%f'", msg->point.y);
     RCLCPP_INFO(this->get_logger(), "I heard: '%f'", msg->point.z);
-   std::string fromFrameRel = msg->header.frame_id;
+   std::string fromFrameRel = "base_link";//msg->header.frame_id;
    std::string toFrameRel = "map";
    geometry_msgs::msg::TransformStamped transformStamped;
         // Look up for the transformation between target_frame and turtle2 frames
@@ -64,10 +65,13 @@ private:
     	    RCLCPP_INFO(this->get_logger(), "I heard: '%f'", newPoint.point.y);
             RCLCPP_INFO(this->get_logger(), "I heard: '%f'", newPoint.point.z);
             
+            
+
+           marker.id = x;
+           x++;
 	    marker.header.frame_id = "map";
 	    marker.ns = "basic_shapes";
-	    marker.id = 0;
-	    marker.type = 1;
+	    
 	    marker.action = visualization_msgs::msg::Marker::ADD;
 
 	    marker.pose.position.x = newPoint.point.x;
@@ -78,21 +82,30 @@ private:
 	    marker.pose.orientation.z = 0.0;
 	    marker.pose.orientation.w = 1.0;
 
-	    marker.scale.x = 0.4;
-	    marker.scale.y = 0.4;
-	    marker.scale.z = 0.4;
+	    marker.scale.x = 0.2;
+	    marker.scale.y = 0.2;
+	    marker.scale.z = 0.2;
 
-	    marker.color.r = 0.0f;
-	    marker.color.g = 1.0f;
-	    marker.color.b = 0.0f;
 	    marker.color.a = 1.0;
 	    
+	    if (msg->header.frame_id.compare("apple") == 0) {
+            	marker.color.r = 1.0f;
+	    	marker.color.g = 0.0f;
+	    	marker.color.b = 0.0f;
+	    	marker.type = 2;
+            } else if (msg->header.frame_id.compare("car") == 0) {
+            	marker.color.r = 0.5f;
+	    	marker.color.g = 0.5f;
+	    	marker.color.b = 0.5f;
+	    	marker.type = 1;
+            } else {
+            	marker.color.r = 0.0f;
+	    	marker.color.g = 1.0f;
+	    	marker.color.b = 0.0f;
+	    	marker.type = 3;
+            }
 	    
-	    //visualization_msgs::msg::MarkerArray markerArray;
-            
-	    //markerArray.markers.push_back(marker);
 	    
-	    //publisher_->publish(markerArray);
             publisher_->publish(marker);
             
 

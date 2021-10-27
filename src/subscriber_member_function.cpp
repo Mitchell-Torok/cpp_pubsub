@@ -7,6 +7,7 @@
 #include "geometry_msgs/msg/point.hpp"
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include "visualization_msgs/msg/marker.hpp"
+#include "visualization_msgs/msg/marker_array.hpp"
 
 #include <tf2/exceptions.h>
 #include <tf2_ros/transform_listener.h>
@@ -14,13 +15,17 @@
 
 using std::placeholders::_1;
 
-class MinimalSubscriber : public rclcpp::Node
-{
+
+
+  
+class MinimalSubscriber : public rclcpp::Node {
+
+
 public:
 
-  MinimalSubscriber()
-  : Node("minimal_subscriber")
-  {  
+  visualization_msgs::msg::Marker marker;
+  //visualization_msgs::msg::MarkerArray markerArray;
+  MinimalSubscriber() : Node("minimal_subscriber") {  
     tf_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
     transform_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
@@ -28,10 +33,12 @@ public:
     subscription_ = this->create_subscription<geometry_msgs::msg::PointStamped>("topic", 10, std::bind(&MinimalSubscriber::topic_callback, this, _1));
     
     publisher_ = this->create_publisher<visualization_msgs::msg::Marker>("visualization_marker", 10);
+    
+  
     }
 
 private:
-  void topic_callback(const geometry_msgs::msg::PointStamped::SharedPtr msg) const
+  void topic_callback(const geometry_msgs::msg::PointStamped::SharedPtr msg)
   {
     RCLCPP_INFO(this->get_logger(), "I heard: '%f'", msg->point.x);
     RCLCPP_INFO(this->get_logger(), "I heard: '%f'", msg->point.y);
@@ -57,14 +64,11 @@ private:
     	    RCLCPP_INFO(this->get_logger(), "I heard: '%f'", newPoint.point.y);
             RCLCPP_INFO(this->get_logger(), "I heard: '%f'", newPoint.point.z);
             
-           
 	    marker.header.frame_id = "map";
-	    //rclcpp::Time now = this->get_clock()->now();
-	    //marker.header.stamp = now;
 	    marker.ns = "basic_shapes";
 	    marker.id = 0;
 	    marker.type = 1;
-	    marker.action = 0;
+	    marker.action = visualization_msgs::msg::Marker::ADD;
 
 	    marker.pose.position.x = newPoint.point.x;
 	    marker.pose.position.y = newPoint.point.y;
@@ -74,17 +78,22 @@ private:
 	    marker.pose.orientation.z = 0.0;
 	    marker.pose.orientation.w = 1.0;
 
-	    marker.scale.x = 1.0;
-	    marker.scale.y = 1.0;
-	    marker.scale.z = 1.0;
+	    marker.scale.x = 0.4;
+	    marker.scale.y = 0.4;
+	    marker.scale.z = 0.4;
 
 	    marker.color.r = 0.0f;
 	    marker.color.g = 1.0f;
 	    marker.color.b = 0.0f;
 	    marker.color.a = 1.0;
-
-	    publisher_->publish(marker);
+	    
+	    
+	    //visualization_msgs::msg::MarkerArray markerArray;
             
+	    //markerArray.markers.push_back(marker);
+	    
+	    //publisher_->publish(markerArray);
+            publisher_->publish(marker);
             
 
         } catch (tf2::TransformException & ex) {
@@ -100,6 +109,8 @@ private:
   rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr publisher_;
   std::shared_ptr<tf2_ros::TransformListener> transform_listener_{nullptr};
   std::unique_ptr<tf2_ros::Buffer> tf_buffer_;
+  
+  
 };
 
 int main(int argc, char * argv[])

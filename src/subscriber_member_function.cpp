@@ -8,6 +8,7 @@
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include "visualization_msgs/msg/marker.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
+#include "qr_custom_message/msg/qr_point_stamped.hpp"
 
 #include <tf2/exceptions.h>
 #include <tf2_ros/transform_listener.h>
@@ -30,7 +31,7 @@ public:
     transform_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
 
-    subscription_ = this->create_subscription<geometry_msgs::msg::PointStamped>("topic", 10, std::bind(&MinimalSubscriber::topic_callback, this, _1));
+    subscription_ = this->create_subscription<qr_custom_message::msg::QrPointStamped>("topic", 10, std::bind(&MinimalSubscriber::topic_callback, this, _1));
     
     publisher_ = this->create_publisher<visualization_msgs::msg::Marker>("visualization_marker", 10);
     
@@ -39,36 +40,28 @@ public:
 
 private:
   int x;
-  void topic_callback(const geometry_msgs::msg::PointStamped::SharedPtr msg)
-  {
-    RCLCPP_INFO(this->get_logger(), "I heard: '%f'", msg->point.x);
-    RCLCPP_INFO(this->get_logger(), "I heard: '%f'", msg->point.y);
-    RCLCPP_INFO(this->get_logger(), "I heard: '%f'", msg->point.z);
-   std::string fromFrameRel = "base_link";//msg->header.frame_id;
-   std::string toFrameRel = "map";
-   geometry_msgs::msg::TransformStamped transformStamped;
-        // Look up for the transformation between target_frame and turtle2 frames
-        // and send velocity commands for turtle2 to reach target_frame
+  void topic_callback(const qr_custom_message::msg::QrPointStamped::SharedPtr msg) {
+    std::string fromFrameRel = msg->header.frame_id;
+    std::string toFrameRel = "map";
+    geometry_msgs::msg::TransformStamped transformStamped;
+
         RCLCPP_INFO(this->get_logger(), "Starting try catch");
         try {
-          transformStamped = tf_buffer_->lookupTransform(
-            toFrameRel, fromFrameRel,
-            tf2::TimePointZero);
+          transformStamped = tf_buffer_->lookupTransform(toFrameRel, fromFrameRel,tf2::TimePointZero);
             RCLCPP_INFO(this->get_logger(), "Transform worked");
+            
+            
             geometry_msgs::msg::PointStamped newPoint;
-            auto marker = visualization_msgs::msg::Marker();
-            newPoint.point.x = 0;
-            newPoint.point.y = 0;
-            newPoint.point.z = 0;
-            tf2::doTransform(*msg, newPoint, transformStamped);
-            RCLCPP_INFO(this->get_logger(), "I heard: '%f'", newPoint.point.x);
-    	    RCLCPP_INFO(this->get_logger(), "I heard: '%f'", newPoint.point.y);
-            RCLCPP_INFO(this->get_logger(), "I heard: '%f'", newPoint.point.z);
+            geometry_msgs::msg::PointStamped beforePoint;
+           
+            beforePoint.header = msg->header;
+            beforePoint.point  = msg->point;
             
+            tf2::doTransform(beforePoint, newPoint, transformStamped);
             
-
-           marker.id = x;
-           x++;
+	    auto marker = visualization_msgs::msg::Marker();
+            marker.id = x;
+            x++;
 	    marker.header.frame_id = "map";
 	    marker.ns = "basic_shapes";
 	    
@@ -88,21 +81,31 @@ private:
 
 	    marker.color.a = 1.0;
 	    
-	    if (msg->header.frame_id.compare("apple") == 0) {
+	    if (msg->data.compare("apple") == 0) {
             	marker.color.r = 1.0f;
 	    	marker.color.g = 0.0f;
 	    	marker.color.b = 0.0f;
 	    	marker.type = 2;
-            } else if (msg->header.frame_id.compare("car") == 0) {
+            } else if (msg->data.compare("car") == 0) {
             	marker.color.r = 0.5f;
 	    	marker.color.g = 0.5f;
 	    	marker.color.b = 0.5f;
 	    	marker.type = 1;
+            } else if (msg->data.compare("orange") == 0) {
+            	marker.color.r = 1.0f;
+	    	marker.color.g = 0.65f;
+	    	marker.color.b = 0.0f;
+	    	marker.type = 2;
+            } else if (msg->data.compare("banana") == 0) {
+            	marker.color.r = 1.0f;
+	    	marker.color.g = 1.0f;
+	    	marker.color.b = 0.0f;
+	    	marker.type = 3;
             } else {
             	marker.color.r = 0.0f;
 	    	marker.color.g = 1.0f;
 	    	marker.color.b = 0.0f;
-	    	marker.type = 3;
+	    	marker.type = 4;
             }
 	    
 	    
@@ -118,7 +121,7 @@ private:
 	
 	
   }
-  rclcpp::Subscription<geometry_msgs::msg::PointStamped>::SharedPtr subscription_;
+  rclcpp::Subscription<qr_custom_message::msg::QrPointStamped>::SharedPtr subscription_;
   rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr publisher_;
   std::shared_ptr<tf2_ros::TransformListener> transform_listener_{nullptr};
   std::unique_ptr<tf2_ros::Buffer> tf_buffer_;

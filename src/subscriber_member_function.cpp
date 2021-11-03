@@ -64,6 +64,7 @@ private:
             x++;
 	    marker.header.frame_id = "map";
 	    marker.ns = "basic_shapes";
+	    marker.text = msg->data;
 	    
 	    marker.action = visualization_msgs::msg::Marker::ADD;
 

@@ -59,6 +59,8 @@ private:
             
             tf2::doTransform(beforePoint, newPoint, transformStamped);
             
+            
+            //PUBLISH THE MARKER
 	    auto marker = visualization_msgs::msg::Marker();
             marker.id = x;
             x++;
@@ -108,8 +110,30 @@ private:
 	    	marker.type = 4;
             }
 	    
-	    
             publisher_->publish(marker);
+            
+            
+            //PUBLISH THE TEXT ABOVE THE IMAGE
+            auto markerText = visualization_msgs::msg::Marker();
+            markerText.id = x;
+            x++;
+	    markerText.header.frame_id = "map";
+	    markerText.ns = "basic_shapes";
+	    
+	    markerText.action = visualization_msgs::msg::Marker::ADD;
+
+	    markerText.pose.position.x = newPoint.point.x;
+	    markerText.pose.position.y = newPoint.point.y;
+	    markerText.pose.position.z = newPoint.point.z + 0.4; 
+
+	    markerText.scale.z = 0.3;
+
+	    markerText.color.a = 1.0;
+	    markerText.type = 9;
+
+            markerText.text = msg->data;
+	    
+            publisher_->publish(markerText);
             
 
         } catch (tf2::TransformException & ex) {

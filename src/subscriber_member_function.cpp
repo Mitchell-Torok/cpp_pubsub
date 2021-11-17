@@ -33,6 +33,7 @@ public:
 
     subscription_ = this->create_subscription<qr_custom_message::msg::QrPointStamped>("topic", 10, std::bind(&MinimalSubscriber::topic_callback, this, _1));
     
+    cmd_subscription_ = this->create_subscription<std_msgs::msg::String>("cmd", 10, std::bind(&MinimalSubscriber::command_recieved, this, _1));
     publisher_ = this->create_publisher<visualization_msgs::msg::Marker>("visualization_marker", 10);
     
     x = 0;
@@ -40,6 +41,11 @@ public:
 
 private:
   int x;
+  
+  void command_recieved(const std_msgs::msg::String::SharedPtr msg) const {
+  	RCLCPP_INFO(this->get_logger(), "I heard: '%s'", msg->data.c_str());
+  
+  }
   void topic_callback(const qr_custom_message::msg::QrPointStamped::SharedPtr msg) {
     std::string fromFrameRel = msg->header.frame_id;
     std::string toFrameRel = "map";
@@ -147,6 +153,7 @@ private:
 	
   }
   rclcpp::Subscription<qr_custom_message::msg::QrPointStamped>::SharedPtr subscription_;
+  rclcpp::Subscription<std_msgs::msg::String>::SharedPtr cmd_subscription_;
   rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr publisher_;
   std::shared_ptr<tf2_ros::TransformListener> transform_listener_{nullptr};
   std::unique_ptr<tf2_ros::Buffer> tf_buffer_;

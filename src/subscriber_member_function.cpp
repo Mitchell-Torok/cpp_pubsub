@@ -1,6 +1,7 @@
 #include <chrono>
 #include <memory>
-
+#include <cstdlib>
+#include <vector>
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
 #include "geometry_msgs/msg/point_stamped.hpp"
@@ -9,13 +10,15 @@
 #include "visualization_msgs/msg/marker.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 #include "qr_custom_message/msg/qr_point_stamped.hpp"
+#include "comp3431_interfaces/srv/map_info.hpp"
+#include "comp3431_interfaces/msg/qr_code_block.hpp"
 
 #include <tf2/exceptions.h>
 #include <tf2_ros/transform_listener.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 using std::placeholders::_1;
-
+using namespace std::chrono_literals;
 
 
   
@@ -33,6 +36,9 @@ public:
 
     subscription_ = this->create_subscription<qr_custom_message::msg::QrPointStamped>("topic", 10, std::bind(&MinimalSubscriber::topic_callback, this, _1));
     
+    
+    client = this->create_client<comp3431_interfaces::srv::MapInfo>("set_map_info");
+  
     cmd_subscription_ = this->create_subscription<std_msgs::msg::String>("cmd", 10, std::bind(&MinimalSubscriber::command_recieved, this, _1));
     publisher_ = this->create_publisher<visualization_msgs::msg::Marker>("visualization_marker", 10);
     
@@ -40,9 +46,39 @@ public:
     }
 
 private:
-  int x;
+  int x; //Variable for marker id so no to markers have the same ID
   
-  void command_recieved(const std_msgs::msg::String::SharedPtr msg) const {
+  void command_recieved(const std_msgs::msg::String::SharedPtr msg) {
+  	
+  	//TODO CLIENT THINGY TO SEND DATA 
+  	std::string command = msg->data.c_str();
+  	if (command.compare("stop") == 0) {
+  		RCLCPP_INFO(this->get_logger(), "stop");
+  		
+  		
+  		  auto request = std::make_shared<comp3431_interfaces::srv::MapInfo::Request>();
+		  
+		  auto block = comp3431_interfaces::msg::QRCodeBlock();
+		  block.text = "living-room snickers";
+		  block.pose.position.x = 0.0;
+		  block.pose.position.y = 0.0;
+		  block.pose.position.z = 0.0;
+		  
+		  request->blocks.push_back(block);
+
+		  while (!client->wait_for_service(1s)) {
+		    if (!rclcpp::ok()) {
+		      RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Interrupted while waiting for the service. Exiting.");
+		      break;
+		    }
+		    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "service not available, waiting again...");
+		  }
+
+		  auto result = client->async_send_request(request);
+  		
+  		
+  	}
+  	
   	RCLCPP_INFO(this->get_logger(), "I heard: '%s'", msg->data.c_str());
   
   }
@@ -153,6 +189,7 @@ private:
 	
   }
   rclcpp::Subscription<qr_custom_message::msg::QrPointStamped>::SharedPtr subscription_;
+  rclcpp::Client<comp3431_interfaces::srv::MapInfo>::SharedPtr client;
   rclcpp::Subscription<std_msgs::msg::String>::SharedPtr cmd_subscription_;
   rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr publisher_;
   std::shared_ptr<tf2_ros::TransformListener> transform_listener_{nullptr};

@@ -19,9 +19,10 @@ find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(qr_custom_message REQUIRED)
+find_package(comp3431_interfaces REQUIRED)
 
 add_executable(listener src/subscriber_member_function.cpp)
-ament_target_dependencies(listener rclcpp std_msgs geometry_msgs tf2_ros tf2_geometry_msgs tf2 visualization_msgs qr_custom_message)
+ament_target_dependencies(listener rclcpp std_msgs geometry_msgs tf2_ros tf2_geometry_msgs tf2 visualization_msgs qr_custom_message comp3431_interfaces)
 
 install(TARGETS
   listener

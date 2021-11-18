@@ -65,6 +65,7 @@ private:
 		    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "service not available, waiting again...");
 		  }
 		  auto request = std::make_shared<comp3431_interfaces::srv::MapInfo::Request>();
+		  request->blocks = blocks;
 		  auto result = client->async_send_request(request);
   		
   		

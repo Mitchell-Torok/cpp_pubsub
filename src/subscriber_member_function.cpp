@@ -47,7 +47,8 @@ public:
 
 private:
   int x; //Variable for marker id so no to markers have the same ID
-  
+  //std::vector<comp3431_interfaces::srv::MapInfo::Request> request;
+  std::vector<comp3431_interfaces::msg::QRCodeBlock> blocks;
   void command_recieved(const std_msgs::msg::String::SharedPtr msg) {
   	
   	//TODO CLIENT THINGY TO SEND DATA 
@@ -55,16 +56,6 @@ private:
   	if (command.compare("stop") == 0) {
   		RCLCPP_INFO(this->get_logger(), "stop");
   		
-  		
-  		  auto request = std::make_shared<comp3431_interfaces::srv::MapInfo::Request>();
-		  
-		  auto block = comp3431_interfaces::msg::QRCodeBlock();
-		  block.text = "living-room snickers";
-		  block.pose.position.x = 0.0;
-		  block.pose.position.y = 0.0;
-		  block.pose.position.z = 0.0;
-		  
-		  request->blocks.push_back(block);
 
 		  while (!client->wait_for_service(1s)) {
 		    if (!rclcpp::ok()) {
@@ -73,7 +64,7 @@ private:
 		    }
 		    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "service not available, waiting again...");
 		  }
-
+		  auto request = std::make_shared<comp3431_interfaces::srv::MapInfo::Request>();
 		  auto result = client->async_send_request(request);
   		
   		
@@ -92,6 +83,14 @@ private:
           transformStamped = tf_buffer_->lookupTransform(toFrameRel, fromFrameRel,tf2::TimePointZero);
             RCLCPP_INFO(this->get_logger(), "Transform worked");
             
+            
+                 auto block = comp3431_interfaces::msg::QRCodeBlock();
+		  block.text =  msg->data;
+		  block.pose.position.x = msg->point.x;
+		  block.pose.position.y = msg->point.y;
+		  block.pose.position.z = msg->point.z;
+		  
+		blocks.push_back(block);
             
             geometry_msgs::msg::PointStamped newPoint;
             geometry_msgs::msg::PointStamped beforePoint;
@@ -177,6 +176,8 @@ private:
             markerText.text = msg->data;
 	    
             publisher_->publish(markerText);
+            
+        
             
 
         } catch (tf2::TransformException & ex) {
